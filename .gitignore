@@ -17,6 +17,7 @@ __pycache__/
 *.ckpt
 *.npy
 *.onnx
+checkpoints/
 
 # Training outputs
 work_dirs/
@@ -37,3 +38,4 @@ xlm-roberta-large/
 
 # Personal notes
 cc1.md
+TGMFM_guide.md
