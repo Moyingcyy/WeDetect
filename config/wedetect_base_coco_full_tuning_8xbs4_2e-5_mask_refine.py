@@ -1,7 +1,7 @@
 _base_ = ["wedetect_base.py"]
 
 
-load_from = 'wedetect_base.pth'
+load_from = '/SSD_data2/ch/NewWeDetect/WeDetect/checkpoints/wedetect_base.pth'
 
 num_training_classes = 80
 num_classes = 80
@@ -140,11 +140,11 @@ coco_train_dataset = dict(
     type='MultiModalDataset',
     dataset=dict(
         type='WeCocoDataset',
-        data_root='data/coco/',
-        ann_file='data/coco/annotations/instances_train2017.json',
+        data_root='/SSD_data2/ch/coco',
+        ann_file='/SSD_data2/ch/coco/annotations/instances_train2017.json',
         data_prefix=dict(img='train2017/'),
         filter_cfg=dict(filter_empty_gt=False, min_size=32)),
-    class_text_path='data/texts/coco_zh_class_texts.json',
+    class_text_path='/SSD_data2/ch/NewWeDetect/WeDetect/data/texts/coco_zh_class_texts.json',
     pipeline=train_pipeline)
 
 train_dataloader = dict(

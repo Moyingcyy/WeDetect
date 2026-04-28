@@ -1,1 +1,39 @@
+# macOS
 *.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Model checkpoints and weights
+*.pth
+*.pt
+*.ckpt
+*.npy
+*.onnx
+
+# Training outputs
+work_dirs/
+
+# Logs
+*.log
+
+# Datasets (configured on server at /SSD_data2/ch/...)
+data/
+
+# Pretrained language models (downloadable from HuggingFace)
+xlm-roberta-base/
+xlm-roberta-large/
+
+# Fonts
+*.ttc
+*.ttf
+
+# Personal notes
+cc1.md

@@ -55,7 +55,7 @@ model = dict(
         ),
         text_model=dict(
             type="XLMRobertaLanguageBackbone",
-            model_name="./xlm-roberta-base/",
+            model_name="/SSD_data2/ch/NewWeDetect/WeDetect/xlm-roberta-base",
             model_size="base",
             frozen_modules=[],
         ),
@@ -63,7 +63,11 @@ model = dict(
     neck=dict(
         type="CSPRepBiFPANNeck",
         scale_factor=1.0,
-        model_size = 'base',
+        model_size='base',
+        use_tgmfm=True,
+        text_dim=768,
+        tgmfm_hidden_ratio=0.5,
+        tgmfm_use_residual=True,
     ),
     bbox_head=dict(
         type="YOLOWorldHead",
@@ -139,13 +143,13 @@ coco_val_dataset = dict(
     type="MultiModalDataset",
     dataset=dict(
         type="WeCocoDataset",
-        data_root="data/coco/",
+        data_root="/SSD_data2/ch/coco",
         test_mode=True,
-        ann_file="data/coco/annotations/instances_val2017.json",
+        ann_file="/SSD_data2/ch/coco/annotations/instances_val2017.json",
         data_prefix=dict(img="val2017"),
         batch_shapes_cfg=None,
     ),
-    class_text_path="data/texts/coco_zh_class_texts.json",
+    class_text_path="/SSD_data2/ch/NewWeDetect/WeDetect/data/texts/coco_zh_class_texts.json",
     pipeline=test_pipeline,
 )
 
@@ -154,13 +158,13 @@ lvis_minival_dataset = dict(
     type="MultiModalDataset",
     dataset=dict(
         type="YOLOv5LVISV1Dataset",
-        data_root=f"data/coco/",
+        data_root="/SSD_data2/ch/coco",
         test_mode=True,
-        ann_file=f"data/lvis/lvis_v1_minival_inserted_image_name.json",
+        ann_file="/SSD_data2/ch/lvis/lvis_v1_minival_inserted_image_name.json",
         data_prefix=dict(img=""),
         batch_shapes_cfg=None,
     ),
-    class_text_path=f"data/texts/lvis_v1_zh_class_texts.json",
+    class_text_path="/SSD_data2/ch/NewWeDetect/WeDetect/data/texts/lvis_v1_zh_class_texts.json",
     pipeline=test_pipeline,
 )
 
@@ -168,29 +172,29 @@ lvis_od_val_dataset = dict(
     type="MultiModalDataset",
     dataset=dict(
         type="YOLOv5LVISV1Dataset",
-        data_root=f"data/coco/",
+        data_root="/SSD_data2/ch/coco",
         test_mode=True,
-        ann_file="data/lvis/lvis_od_val.json",
+        ann_file="/SSD_data2/ch/lvis/lvis_od_val.json",
         data_prefix=dict(img=""),
         batch_shapes_cfg=None,
     ),
-    class_text_path=f"data/texts/lvis_v1_zh_class_texts.json",
+    class_text_path="/SSD_data2/ch/NewWeDetect/WeDetect/data/texts/lvis_v1_zh_class_texts.json",
     pipeline=test_pipeline,
 )
 coco_evaluator = dict(
     type="CocoMetric",
-    ann_file=f"data/coco/annotations/instances_val2017.json",
+    ann_file="/SSD_data2/ch/coco/annotations/instances_val2017.json",
     metric="bbox",
 )
 
 lvis_minival_evaluator = dict(
     type="LVISMetric",
-    ann_file=f"data/lvis/lvis_v1_minival_inserted_image_name.json",
+    ann_file="/SSD_data2/ch/lvis/lvis_v1_minival_inserted_image_name.json",
     metric="bbox",
 )
 lvis_od_val_evaluator = dict(
     type="LVISMetric",
-    ann_file="data/lvis/lvis_od_val.json",
+    ann_file="/SSD_data2/ch/lvis/lvis_od_val.json",
     metric="bbox",
 )
 

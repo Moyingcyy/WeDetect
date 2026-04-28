@@ -105,11 +105,13 @@ class YOLOWorldDetector(YOLODetector):
         else:
             img_feats, txt_feats = self.backbone(batch_inputs, texts)
         if self.with_neck:
+            if hasattr(self.neck, 'set_text_feat'):
+                self.neck.set_text_feat(txt_feats)
             if self.mm_neck:
                 img_feats = self.neck(img_feats, txt_feats)
             else:
                 img_feats = self.neck(img_feats)
-        
+
         return img_feats, txt_feats
     
 

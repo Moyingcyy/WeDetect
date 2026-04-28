@@ -13,6 +13,8 @@ from .yolov8_pafpn import YOLOv8PAFPN
 from torch.nn.parameter import Parameter
 from torch.nn.modules.batchnorm import _BatchNorm
 
+from .tgmfm_module import TGMFM
+
 
 activation_table = {'relu':nn.ReLU(),
                     'silu':nn.SiLU(),
@@ -993,7 +995,11 @@ class CSPRepBiFPANNeck(nn.Module):
     def __init__(self,
                  scale_factor=0.75,
                  model_size='base',
-                 freeze_all: bool = False,) -> None:
+                 freeze_all: bool = False,
+                 use_tgmfm: bool = False,
+                 text_dim: int = 768,
+                 tgmfm_hidden_ratio: float = 0.5,
+                 tgmfm_use_residual: bool = True) -> None:
         super().__init__()
 
         channels_list=[64, 128, 256, 512, 1024, 256, 128, 128, 256, 256, 512]
@@ -1090,6 +1096,24 @@ class CSPRepBiFPANNeck(nn.Module):
             block=block
         )
 
+        self.use_tgmfm = use_tgmfm
+        if self.use_tgmfm:
+            # Channel dims for each stage output (base model with scale_factor=1.0):
+            # Rep_p4: 256, Rep_p3: 128, Rep_n3: 256, Rep_n4: 512
+            tgmfm_channels = [
+                int(channels_list[5] * scale_factor),   # Rep_p4
+                int(channels_list[6] * scale_factor),   # Rep_p3
+                int(channels_list[8] * scale_factor),   # Rep_n3
+                int(channels_list[10] * scale_factor),  # Rep_n4
+            ]
+            self.tgmfm = TGMFM(
+                text_dim=text_dim,
+                feat_channels=tgmfm_channels,
+                hidden_ratio=tgmfm_hidden_ratio,
+                use_residual=tgmfm_use_residual,
+            )
+        self.text_feat = None
+
         self.freeze_all = freeze_all
         if self.freeze_all:
             self._freeze_all()
@@ -1111,6 +1135,10 @@ class CSPRepBiFPANNeck(nn.Module):
             for param in m.parameters():
                 param.requires_grad = False
 
+    def set_text_feat(self, text_feat):
+        """Set text features for TGMFM modulation."""
+        self.text_feat = text_feat
+
     def forward(self, input):
 
         (x3, x2, x1, x0) = input
@@ -1119,20 +1147,35 @@ class CSPRepBiFPANNeck(nn.Module):
         f_concat_layer0 = self.Bifusion0([fpn_out0, x1, x2])
         f_out0 = self.Rep_p4(f_concat_layer0)
 
+        # Apply TGMFM to top-down stage 1 (Rep_p4 output)
+        if self.use_tgmfm and self.text_feat is not None:
+            f_out0 = self.tgmfm.forward_single(f_out0, self.text_feat, stage_idx=0)
+
         fpn_out1 = self.reduce_layer1(f_out0)
         f_concat_layer1 = self.Bifusion1([fpn_out1, x2, x3])
         pan_out2 = self.Rep_p3(f_concat_layer1)
+
+        # Apply TGMFM to top-down stage 2 (Rep_p3 output)
+        if self.use_tgmfm and self.text_feat is not None:
+            pan_out2 = self.tgmfm.forward_single(pan_out2, self.text_feat, stage_idx=1)
 
         down_feat1 = self.downsample2(pan_out2)
         p_concat_layer1 = torch.cat([down_feat1, fpn_out1], 1)
         pan_out1 = self.Rep_n3(p_concat_layer1)
 
+        # Apply TGMFM to bottom-up stage 1 (Rep_n3 output)
+        if self.use_tgmfm and self.text_feat is not None:
+            pan_out1 = self.tgmfm.forward_single(pan_out1, self.text_feat, stage_idx=2)
+
         down_feat0 = self.downsample1(pan_out1)
         p_concat_layer2 = torch.cat([down_feat0, fpn_out0], 1)
         pan_out0 = self.Rep_n4(p_concat_layer2)
 
-        outputs = [pan_out2, pan_out1, pan_out0]
+        # Apply TGMFM to bottom-up stage 2 (Rep_n4 output)
+        if self.use_tgmfm and self.text_feat is not None:
+            pan_out0 = self.tgmfm.forward_single(pan_out0, self.text_feat, stage_idx=3)
 
+        outputs = [pan_out2, pan_out1, pan_out0]
 
         return outputs
 
